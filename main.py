@@ -39,7 +39,9 @@ def register():
 
         # Redirect to the home page
         return redirect(url_for('home'))
+
     else:
+        # Render the registration form
         return render_template('register.html')
 
 # Define the function to send the confirmation email
@@ -69,8 +71,7 @@ if __name__ == '__main__':
     app.run(debug=True)
 
 
-main.py
-
+main.py file:
 
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
@@ -100,6 +101,7 @@ def register():
         send_confirmation_email(email)
 
         return redirect(url_for('home'))
+
     else:
         return render_template('register.html')
 
