@@ -6,18 +6,6 @@ import sqlite3
 # Create a Flask application
 app = Flask(__name__)
 
-# Define the database connection
-conn = sqlite3.connect('registrants.db')
-c = conn.cursor()
-
-# Create the table if it doesn't exist
-c.execute('''CREATE TABLE IF NOT EXISTS registrants (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                first_name TEXT,
-                last_name TEXT,
-                email TEXT
-                )''')
-
 # Define the home page route
 @app.route('/')
 def home():
@@ -28,45 +16,66 @@ def home():
 def register():
     if request.method == 'POST':
         # Get the form data
+        email = request.form['email']
         first_name = request.form['first_name']
         last_name = request.form['last_name']
-        email = request.form['email']
 
-        # Insert the data into the database
-        c.execute("INSERT INTO registrants (first_name, last_name, email) VALUES (?, ?, ?)",
-                  (first_name, last_name, email))
+        # Connect to the database
+        conn = sqlite3.connect('registrants.db')
+        c = conn.cursor()
+
+        # Insert the registrant into the database
+        c.execute("INSERT INTO registrants (email, first_name, last_name) VALUES (?, ?, ?)",
+                  (email, first_name, last_name))
+
+        # Commit the changes to the database
         conn.commit()
 
+        # Close the connection to the database
+        conn.close()
+
         # Send an email to confirm attendance
-        # ...
+        send_confirmation_email(email)
 
         # Redirect to the home page
         return redirect(url_for('home'))
+    else:
+        return render_template('register.html')
 
-    return render_template('register.html')
+# Define the function to send the confirmation email
+def send_confirmation_email(email):
+    # Import the necessary modules
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
 
-# Define the main function
+    # Create the email message
+    message = MIMEMultipart()
+    message['Subject'] = 'Confirm Your Attendance'
+    message['From'] = 'sender@example.com'
+    message['To'] = email
+    body = 'Thank you for registering for the event. We look forward to seeing you there!'
+    message.attach(MIMEText(body, 'plain'))
+
+    # Connect to the SMTP server and send the email
+    server = smtplib.SMTP('smtp.example.com', 587)
+    server.starttls()
+    server.login('sender@example.com', 'password')
+    server.sendmail('sender@example.com', email, message.as_string())
+    server.quit()
+
+# Run the application
 if __name__ == '__main__':
     app.run(debug=True)
 
 
-main.py file:
+main.py
 
 
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 
 app = Flask(__name__)
-
-conn = sqlite3.connect('registrants.db')
-c = conn.cursor()
-
-c.execute('''CREATE TABLE IF NOT EXISTS registrants (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            first_name TEXT,
-            last_name TEXT,
-            email TEXT
-            )''')
 
 @app.route('/')
 def home():
@@ -75,20 +84,42 @@ def home():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        email = request.form['email']
         first_name = request.form['first_name']
         last_name = request.form['last_name']
-        email = request.form['email']
 
-        c.execute("INSERT INTO registrants (first_name, last_name, email) VALUES (?, ?, ?)",
-                  (first_name, last_name, email))
+        conn = sqlite3.connect('registrants.db')
+        c = conn.cursor()
+
+        c.execute("INSERT INTO registrants (email, first_name, last_name) VALUES (?, ?, ?)",
+                  (email, first_name, last_name))
+
         conn.commit()
+        conn.close()
 
-        # Send an email to confirm attendance
-        # ...
+        send_confirmation_email(email)
 
         return redirect(url_for('home'))
+    else:
+        return render_template('register.html')
 
-    return render_template('register.html')
+def send_confirmation_email(email):
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    message = MIMEMultipart()
+    message['Subject'] = 'Confirm Your Attendance'
+    message['From'] = 'sender@example.com'
+    message['To'] = email
+    body = 'Thank you for registering for the event. We look forward to seeing you there!'
+    message.attach(MIMEText(body, 'plain'))
+
+    server = smtplib.SMTP('smtp.example.com', 587)
+    server.starttls()
+    server.login('sender@example.com', 'password')
+    server.sendmail('sender@example.com', email, message.as_string())
+    server.quit()
 
 if __name__ == '__main__':
     app.run(debug=True)
